@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Student Management</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<header class="header-flex">
+
+    <div class="left">
+        <img src="logo.png" class="logo">
+    </div>
+
+    <div class="center">
+        <h1>National Institute of Technology Silchar</h1>
+        <h2 class="subtitle">Student Lifecycle Management System</h2>
+        <p id="datetime"></p>
+    </div>
+
+</header>
+<div class="marquee">
+    <p>Welcome to the Student Management Portal developed for National Institute of Technology Silchar (Academic Project) | Manage student lifecycle efficiently</p>
+</div>
+<div class="container">
+
+    <h2>Add Student</h2>
+
+    <input id="name" placeholder="Enter Name">
+
+    <select id="branch">
+        <option value="CSE">CSE</option>
+        <option value="ECE">ECE</option>
+        <option value="CIVIL">CIVIL</option>
+        <option value="ELECTRICAL">ELECTRICAL</option>
+        <option value="EIE">EIE</option>
+        <option value="MECHANICAL">MECHANICAL</option>
+    </select>
+
+    <input id="year" placeholder="Enter Year (e.g., 2024)">
+
+    <br><br>
+
+    <button onclick="addStudent()">Add Student</button>
+
+    <hr>
+
+    <h2>Students</h2>
+
+    <button onclick="loadStudents()">View All Students</button>
+
+    <ul id="list"></ul>
+
+</div>
+
+<footer>
+    <p>© 2026 NIT Silchar | Student Management Portal</p>
+</footer>
+
+<script>
+async function addStudent() {
+    let name = document.getElementById("name").value;
+    let branch = document.getElementById("branch").value;
+    let year = document.getElementById("year").value;
+
+    if (!name || !year) {
+        alert("All fields required");
+        return;
+    }
+
+    await fetch('/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, branch, year })
+    });
+
+    document.getElementById("name").value = "";
+    document.getElementById("year").value = "";
+
+    loadStudents();
+}
+
+async function loadStudents() {
+    let res = await fetch('/students');
+    let data = await res.json();
+
+    let list = document.getElementById("list");
+    list.innerHTML = `<h3>Total Students: ${data.length}</h3>`;
+
+    data.forEach(s => {
+        let li = document.createElement("li");
+
+        li.innerHTML = `
+        <strong>${s.name}</strong><br>
+
+        Roll No: ${s.rollNo} 🎓<br>
+        Branch: ${s.branch}<br>
+        Year: ${s.year}<br>
+        Semester: ${s.semester}<br>
+
+        Fees: <span class="badge ${s.feesPaid ? 'paid' : 'pending'}">
+        ${s.feesPaid ? "Paid" : "Pending"}
+        </span><br>
+
+        Graduated: <span class="badge grad">
+        ${s.graduated ? "Yes 🎓" : "No"}
+        </span><br><br>
+
+        <button onclick="updateSem('${s._id}')" ${s.graduated ? "disabled" : ""}>+Sem</button>
+
+        <button onclick="payFees('${s._id}')" ${s.feesPaid ? "disabled" : ""}>Pay Fees</button>
+
+        <button onclick="graduate('${s._id}')" ${s.graduated ? "disabled" : ""}>Graduate</button>
+
+        <button onclick="deleteStudent('${s._id}')">Delete ❌</button>
+        `;
+
+        list.appendChild(li);
+    });
+}
+
+async function updateSem(id) {
+    await fetch('/semester', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+    });
+    loadStudents();
+}
+
+async function payFees(id) {
+    await fetch('/fees', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+    });
+    loadStudents();
+}
+
+async function graduate(id) {
+    await fetch('/graduate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+    });
+    loadStudents();
+}
+
+async function deleteStudent(id) {
+    if (!confirm("Are you sure you want to delete?")) return;
+
+    await fetch(`/delete/${id}`, {
+        method: 'DELETE'
+    });
+
+    loadStudents();
+}
+// ================= DATE TIME FUNCTION =================  
+function updateTime() {
+    const now = new Date();
+    document.getElementById("datetime").innerText = now.toLocaleString();
+}
+
+setInterval(updateTime, 1000);
+updateTime();
+</script>
+
+</body>
+</html>
